@@ -1,0 +1,61 @@
+{% extends "masterPage.html" %}
+
+{% set last_update = namespace(value="Never") %}
+
+{% block content %}
+<div class="row">
+        
+        <!-- Left Rail -->
+        <!-- Menu element-->
+        {% include "menu.html" %}
+
+        <!-- Middle Rail -->
+        <div class="col-9 col-xl-7 col-md-7">
+        {% if floorplans|length > 1 %}
+            {% for name, image in floorplans.items() %}
+                <div class="section" >
+                    <div class="panel panel--loose panel--raised base-margin-bottom">
+                        <h2 class="subtitle">Floorplan - {{name}}</h2>
+                        <hr>
+                        {% for key, value in image.items() %}
+                            {% if key == 'filename' %}
+                                <a data-fslightbox="gallery" href="{{ url_for('static', filename='floorplans') }}/{{image['filename']}}" >
+                                <img src="{{ url_for('static', filename='floorplans') }}/{{value}}" class="img--fluid"></img>
+                                </a>
+                            {% endif %}
+                            {% if key == 'lastupdate' %}
+                                {% set last_update.value = value %}
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+        <div class="section" >
+            <div class="panel panel--loose panel--raised base-margin-bottom">
+                <h2 class="subtitle">No floorplans found.</h2>
+                <hr>
+                <p>Sorry, no floorplans were found for this location.</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Right Rail -->
+    <div class="col-0 col-xl-3 col-md-2">
+        <div class="section" >
+            <div class="panel panel--loose panel--raised base-margin-bottom">
+                <h2 class="subtitle">Additional Info</h2>
+                <hr>
+                <p><b>Map last updated:</b></p>
+                <p>{{ last_update.value }}</p>
+                <hr>
+                <p><b>Map Legend:</b></p>
+                <p><div style="width:18px;height:18px;background-color:rgb(35, 58, 235);"></div>Access Point</p>
+                <p><div style="width:18px;height:18px;background-color:rgb(212, 134, 44);"></div>BLE Tags (Location Known)</p>
+                <p><div style="width:18px;height:18px;background-color:rgb(35, 179, 30);"></div>BLE Tags (Nearest AP)</p>
+            </div>
+        </div>
+    </div>
+</div>
+{%  endblock %}

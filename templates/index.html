@@ -1,0 +1,40 @@
+<!-- Instructions page: This page includes information about the frontend template -->
+
+{% extends "masterPage.html" %}
+
+{% block content %}
+<div class="row">
+        
+        <!-- Left Rail -->
+        <!-- Menu element-->
+        {% include "menu.html" %}
+
+        <!-- Middle Rail -->
+        <div class="col-9 col-xl-7 col-md-7">
+            <div class="section" >
+                <div class="panel panel--loose panel--raised base-margin-bottom">
+                    <h2 class="subtitle">Meraki BLE Location Mapping</h2>
+                    <hr>
+                    
+                    <p>
+                        <h2>Welcome!</h2>
+                        <p>Please select a Meraki Network from the menu.</p>
+
+
+                </div>
+            </div>
+        </div>
+
+    <!-- Right Rail -->
+    <div class="col-0 col-xl-3 col-md-2">
+        <div class="section" >
+            <div class="panel panel--loose panel--raised base-margin-bottom">
+                <h2 class="subtitle">Additional Info</h2>
+                <hr>
+                <p><b>Last update from Meraki:</b></p>
+                <p>{{ last_update }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{%  endblock %}

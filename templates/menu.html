@@ -1,0 +1,31 @@
+{% set current_uri = url_for(request.endpoint, **request.view_args) %}
+<nav class="col-3 col-xl-2 col-md-3 sidebar dbl-margin-top" role="navigation">
+    <ul id="rootSidebar">
+        <li class="sidebar__item selected">
+            <a href="/" tabindex="0" title="Assets" target="_self">
+                <span class="icon-home"></span>
+                <span>Home</span>
+            </a>
+        </li>
+        <li class="sidebar__drawer sidebar__drawer--opened">
+            <a tabindex="0" title="Meraki Networks">
+                <span class="icon-browser"></span>
+                <span>Meraki Networks</span>
+            </a>
+            <ul>
+                {% for network_id, network_name in networks.items() %}
+                {% if "EMM" in network_name %}
+                {% else %}
+                {% if network_id in current_uri %}
+                <li class="sidebar__item"><a href="/{{network_id}}" target="_self">
+                    <span class="icon-right-arrow"></span><b>{{network_name}}</b></a>
+                </li>
+                {% else%}
+                <li class="sidebar__item"><a href="/{{network_id}}" target="_self">{{network_name}}</a></li>
+                {% endif %}
+                {% endif %}
+                {% endfor %}
+            </ul>
+        </li>
+    </ul>
+</nav>
