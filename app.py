@@ -15,6 +15,7 @@ import datetime
 import json
 import logging
 import os
+import sys
 import threading
 from datetime import datetime
 from time import sleep
@@ -28,27 +29,48 @@ from PIL import Image, ImageDraw, ImageFont
 log = logging.getLogger(__name__)
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
 
-# REQUIRED CONFIG VALUES:
-MERAKI_VALIDATION_KEY = ""
-MERAKI_LOCATION_DATA_SECRET = ""
-
-# OPTIONAL CONFIG VALUES
-FILTER_BLE_TAGS = False
-# If FILTER_BLE_TAGS is True, then BLE_UUID_FILTER must be set
-BLE_UUID_FILTER = ""
-SUPPRESS_MERAKI_LOGGING = True
-FONT_SIZE = 10
-
 # Load all environment variables
 load_dotenv()
 
+# REQUIRED CONFIG VALUES:
+MERAKI_DASHBOARD_API_KEY = os.getenv("MERAKI_DASHBOARD_API_KEY")
+MERAKI_VALIDATION_KEY = os.getenv("MERAKI_VALIDATION_KEY")
+MERAKI_LOCATION_DATA_SECRET = os.getenv("MERAKI_LOCATION_DATA_SECRET")
+MERAKI_ORG_NAME = os.getenv("MERAKI_ORGANIZATION_NAME")
+
+
+if (
+    not MERAKI_DASHBOARD_API_KEY
+    or not MERAKI_VALIDATION_KEY
+    or not MERAKI_LOCATION_DATA_SECRET
+    or not MERAKI_ORG_NAME
+):
+    print(
+        "Error: Missing one or more env vars: MERAKI_DASHBOARD_API_KEY, MERAKI_LOCATION_DATA_SECRET, MERAKI_ORG_NAME, and/or MERAKI_VALIDATION_KEY."
+    )
+    print("Please configure these variables & try again.")
+    sys.exit(1)
+
+# OPTIONAL CONFIG VALUES
+FILTER_BLE_TAGS = os.getenv("MERAKI_FILTER_BLE_TAGS", False)
+
+# If FILTER_BLE_TAGS is True, then BLE_UUID_FILTER must be set
+BLE_UUID_FILTER = os.getenv("MERAKI_BLE_UUID_FILTER", "")
+
+SUPPRESS_MERAKI_LOGGING = True
+FONT_SIZE = os.getenv("MERAKI_DASHBOARD_FONT_SIZE", 10)
+
 app = Flask(__name__)
-dashboard = meraki.DashboardAPI(suppress_logging=SUPPRESS_MERAKI_LOGGING)
+dashboard = meraki.DashboardAPI(
+    MERAKI_DASHBOARD_API_KEY, suppress_logging=SUPPRESS_MERAKI_LOGGING
+)
 
 # Global variables
 meraki_networks = {}
 network_floorplans = {}
 last_meraki_update = "Never"
+
+
 
 # Index Page with links to each Meraki Network
 @app.route("/", methods=["GET"])
@@ -81,6 +103,7 @@ def location_info():
     if request.method == "POST":
         # Store Location JSON payload
         location_data = request.json
+
         print(location_data)
         try:
             # Validate that API Secret configured in Meraki Dashboard
@@ -135,7 +158,6 @@ def location_info():
 
 
 # Pre-launch setup
-@app.before_first_request
 def setup():
     """
     Prep local data prior to spinning up flask web UI
@@ -226,8 +248,8 @@ def updateMaps(ble_data):
                     device_uuid = ""
                 except IndexError:
                     device_uuid = ""
-                try: 
-                    bleType = device['bleBeacons'][0]['bleType']
+                try:
+                    bleType = device["bleBeacons"][0]["bleType"]
                 except IndexError:
                     bleType = "Unknown"
                 # We can optionally filter out tags that don't match a certain UUID
@@ -315,9 +337,20 @@ def getMerakiNetworks():
     global meraki_networks
     log.info("Querying list of all Meraki Networks....")
     # Query list of organizations
-    org = dashboard.organizations.getOrganizations()
+    orgs = dashboard.organizations.getOrganizations()
+    org_id = None
+    # Find org by name
+    for org in orgs:
+        if org["name"] == MERAKI_ORG_NAME:
+            org_id = org["id"]
+    if not org_id:
+        print(f"Error: No Organization found matching name: {MERAKI_ORG_NAME}")
+        print(
+            "Please check that dashboard matches name specified by env var: MERAKI_ORGANIZATION_NAME"
+        )
+        sys.exit(1)
     # Query all networks under the first organization we have access to
-    networks = dashboard.organizations.getOrganizationNetworks(org[0]["id"])
+    networks = dashboard.organizations.getOrganizationNetworks(org_id)
     # Build dictionary of Meraki network ID & name
     meraki_networks = {network["id"]: network["name"] for network in networks}
     log.info(f"Found {len(meraki_networks.keys())} networks!")
@@ -363,5 +396,7 @@ def downloadFloorPlans():
     log.info("Floorplans downloaded!")
 
 
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    setup()
+    app.run(debug=False, host="0.0.0.0", port=8080)

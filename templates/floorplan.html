@@ -11,7 +11,7 @@
 
         <!-- Middle Rail -->
         <div class="col-9 col-xl-7 col-md-7">
-        {% if floorplans|length > 1 %}
+        {% if floorplans|length >= 1 %}
             {% for name, image in floorplans.items() %}
                 <div class="section" >
                     <div class="panel panel--loose panel--raised base-margin-bottom">
